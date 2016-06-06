@@ -46,6 +46,8 @@ public class ExecutionTask implements Runnable {
 
     protected Logger log = LoggerFactory.getLogger(this.getClass());
 
+    private String projectId;
+
     private String nsr_id;
 
     private Set<ScalingAction> actions;
@@ -60,9 +62,10 @@ public class ExecutionTask implements Runnable {
 
     private ActionMonitor actionMonitor;
 
-    public ExecutionTask(String nsr_id, Map actionVnfrMap, Set<ScalingAction> actions, long cooldown, ExecutionEngine executionEngine, ActionMonitor actionMonitor) {
+    public ExecutionTask(String projectId, String nsr_id, Map actionVnfrMap, Set<ScalingAction> actions, long cooldown, ExecutionEngine executionEngine, ActionMonitor actionMonitor) {
         this.actionMonitor = actionMonitor;
         log.debug("Initializing ExecutionTask for NSR with id: " + nsr_id + ". Actions: " + actions);
+        this.projectId = projectId;
         this.nsr_id = nsr_id;
         this.actionVnfrMap = actionVnfrMap;
         this.actions = actions;
@@ -87,7 +90,7 @@ public class ExecutionTask implements Runnable {
 //        }
         try {
             for (ScalingAction action : actions) {
-                vnfr = executionEngine.getNfvoRequestor().getNetworkServiceRecordAgent().getVirtualNetworkFunctionRecord(nsr_id, actionVnfrMap.get(action.getId()));
+                vnfr = executionEngine.getNfvoRequestor(projectId).getNetworkServiceRecordAgent().getVirtualNetworkFunctionRecord(nsr_id, actionVnfrMap.get(action.getId()));
                 if (vnfr == null) {
                     log.warn("Cannot execute ScalingAction. VNFR was not found or problems with the SDK");
                     actionMonitor.finishedAction(nsr_id);
@@ -137,7 +140,7 @@ public class ExecutionTask implements Runnable {
             log.info("Executed scaling actions for NSR " + vnfr.getId());
             if (actionMonitor.getAction(nsr_id) == Action.SCALED) {
                 //log.info("[EXECUTOR] START_COOLDOWN " + new Date().getTime());
-                executionEngine.startCooldown(nsr_id, cooldown);
+                executionEngine.startCooldown(projectId, nsr_id, cooldown);
             } else {
                 actionMonitor.finishedAction(nsr_id);
             }

@@ -27,15 +27,19 @@ repositories {
 dependencies {
     compile 'org.openbaton:plugin:' + openbatonVersion
     compile 'org.openbaton:monitoring:' + openbatonVersion
+    compile 'org.openbaton:catalogue:' + openbatonVersion
 
     compile project(':as-catalogue')
     compile project(':as-utils')
 
     compile project(':configuration')
 
-    compile('org.openbaton:sdk:' + openbatonVersion) /*{
+    compile('org.openbaton:sdk:2.0.2-security') {
         exclude module: 'catalogue'
-    }*/
+    }
+//    compile('org.openbaton:sdk:' + openbatonVersion) /*{
+//        exclude module: 'catalogue'
+//    }*/
 
     compile 'org.springframework.boot:spring-boot:' + springBootVersion
     compile 'org.springframework:spring-test:4.2.0.RELEASE'

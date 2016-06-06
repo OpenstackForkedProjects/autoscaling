@@ -64,10 +64,11 @@ public class RestExecutionInterface {
 //        NetworkServiceRecord nsr = mapper.fromJson(json.get("payload"), NetworkServiceRecord.class);
 //        log.debug("NSR=" + nsr);
 //        detectionEngine.activate(nsr);
+        String projectId = mapper.fromJson(json.get("project_id"), String.class);
         String nsrId = mapper.fromJson(json.get("nsr_id"), String.class);
         String vnfrId = mapper.fromJson(json.get("vnfr_id"), String.class);
         Long cooldown = mapper.fromJson(json.get("cooldown"), Long.class);
-        executionManagement.executeActions(nsrId, new HashMap(), new HashSet<ScalingAction>(), cooldown);
+        executionManagement.executeActions(projectId, nsrId, new HashMap(), new HashSet<ScalingAction>(), cooldown);
     }
 
     /**

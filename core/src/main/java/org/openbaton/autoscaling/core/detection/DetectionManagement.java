@@ -78,7 +78,7 @@ public class DetectionManagement {
     @PostConstruct
     public void init() {
         this.actionMonitor = new ActionMonitor();
-        this.nfvoRequestor = new NFVORequestor(nfvoProperties.getUsername(), nfvoProperties.getPassword(), nfvoProperties.getIp(), nfvoProperties.getPort(), "1");
+        this.nfvoRequestor = new NFVORequestor(nfvoProperties.getUsername(), nfvoProperties.getPassword(), null, nfvoProperties.getIp(), nfvoProperties.getPort(), "1");
         this.detectionTasks = new HashMap<>();
         this.taskScheduler = new ThreadPoolTaskScheduler();
         this.taskScheduler.setPoolSize(10);
@@ -95,10 +95,11 @@ public class DetectionManagement {
         this.taskScheduler.initialize();
     }
 
-    public void start(String nsr_id) throws NotFoundException {
+    public void start(String projectId, String nsr_id) throws NotFoundException {
         log.debug("Activating Alarm Detection for NSR with id: " + nsr_id);
         NetworkServiceRecord nsr = null;
         try {
+            nfvoRequestor.setProjectId(projectId);
             nsr = nfvoRequestor.getNetworkServiceRecordAgent().findById(nsr_id);
         } catch (SDKException e) {
             log.error(e.getMessage(), e);
@@ -110,16 +111,17 @@ public class DetectionManagement {
         }
         for (VirtualNetworkFunctionRecord vnfr : nsr.getVnfr()) {
             for (AutoScalePolicy autoScalePolicy : vnfr.getAuto_scale_policy()) {
-                start(nsr_id, vnfr.getId(), autoScalePolicy);
+                start(projectId, nsr_id, vnfr.getId(), autoScalePolicy);
             }
         }
         log.info("Activated Alarm Detection for NSR with id: " + nsr_id);
     }
 
-    public void start(String nsr_id, String vnfr_id) throws NotFoundException {
+    public void start(String projectId, String nsr_id, String vnfr_id) throws NotFoundException {
         log.debug("Activating Alarm Detection for VNFR " + vnfr_id + " of NSR with id: " + nsr_id);
         VirtualNetworkFunctionRecord vnfr = null;
         try {
+            nfvoRequestor.setProjectId(projectId);
             vnfr = nfvoRequestor.getNetworkServiceRecordAgent().getVirtualNetworkFunctionRecord(nsr_id, vnfr_id);
         } catch (SDKException e) {
             log.error(e.getMessage(), e);
@@ -130,12 +132,12 @@ public class DetectionManagement {
             return;
         }
         for (AutoScalePolicy autoScalePolicy : vnfr.getAuto_scale_policy()) {
-            start(nsr_id, vnfr.getId(), autoScalePolicy);
+            start(projectId, nsr_id, vnfr.getId(), autoScalePolicy);
         }
         log.info("Activated Alarm Detection for VNFR " + vnfr_id + " of NSR with id: " + nsr_id);
     }
 
-    public void start(String nsr_id, String vnfr_id, AutoScalePolicy autoScalePolicy) throws NotFoundException {
+    public void start(String projectId, String nsr_id, String vnfr_id, AutoScalePolicy autoScalePolicy) throws NotFoundException {
         log.debug("Activating Alarm Detection for AutoScalePolicy with id: " + autoScalePolicy.getId() + " of VNFR " + vnfr_id + " of NSR with id: " + nsr_id);
         if (actionMonitor.requestAction(autoScalePolicy.getId(), Action.INACTIVE)) {
             if (!detectionTasks.containsKey(nsr_id)) {
@@ -151,7 +153,7 @@ public class DetectionManagement {
                 return;
             }
             log.debug("Creating new DetectionTask for AutoScalingPolicy " + autoScalePolicy.getName() + " with id: " + autoScalePolicy.getId() + " of VNFR with id: " + vnfr_id);
-            DetectionTask detectionTask = new DetectionTask(nsr_id, vnfr_id, autoScalePolicy, detectionEngine, nfvoProperties, actionMonitor);
+            DetectionTask detectionTask = new DetectionTask(projectId, nsr_id, vnfr_id, autoScalePolicy, detectionEngine, nfvoProperties, actionMonitor);
             ScheduledFuture scheduledFuture = taskScheduler.scheduleAtFixedRate(detectionTask, autoScalePolicy.getPeriod() * 1000);
             detectionTasks.get(nsr_id).get(vnfr_id).put(autoScalePolicy.getId(), scheduledFuture);
             log.info("Activated Alarm Detection for AutoScalePolicy with id: " + autoScalePolicy.getId() + " of VNFR " + vnfr_id + " of NSR with id: " + nsr_id);
@@ -290,13 +292,13 @@ public class DetectionManagement {
         return new AsyncResult<>(true);
     }
 
-    public void sendAlarm(String nsr_id, String vnfr_id, AutoScalePolicy autoScalePolicy) {
+    public void sendAlarm(String projectId, String nsr_id, String vnfr_id, AutoScalePolicy autoScalePolicy) {
         log.info("Sending alarm to Decision-maker for VNFR with id: " + vnfr_id);
         if (actionMonitor.isTerminating(autoScalePolicy.getId())) {
             actionMonitor.finishedAction(autoScalePolicy.getId(), Action.TERMINATED);
             return;
         }
-        decisionManagement.decide(nsr_id, autoScalePolicy);
+        decisionManagement.decide(projectId, nsr_id, autoScalePolicy);
     }
 
 }

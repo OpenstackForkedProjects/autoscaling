@@ -61,7 +61,7 @@ public class RestElasticityManagementInterface {
         log.trace("ACTION=" + action);
         NetworkServiceRecord nsr = mapper.fromJson(json.get("payload"), NetworkServiceRecord.class);
         log.trace("NSR=" + nsr);
-        elasticityManagement.activate(nsr.getId());
+        elasticityManagement.activate(nsr.getProjectId(), nsr.getId());
     }
 
     /**

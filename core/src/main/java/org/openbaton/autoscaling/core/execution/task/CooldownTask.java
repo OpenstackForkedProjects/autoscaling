@@ -37,6 +37,8 @@ public class CooldownTask implements Runnable {
 
     protected Logger log = LoggerFactory.getLogger(this.getClass());
 
+    private String projectId;
+
     private String nsr_id;
 
     private String name;
@@ -47,9 +49,10 @@ public class CooldownTask implements Runnable {
 
     private ActionMonitor actionMonitor;
 
-    public CooldownTask(String nsr_id, long cooldown, ExecutionEngine executionEngine, ActionMonitor actionMonitor) {
+    public CooldownTask(String projectId, String nsr_id, long cooldown, ExecutionEngine executionEngine, ActionMonitor actionMonitor) {
         this.actionMonitor = actionMonitor;
         log.debug("Initializing CooldownTask for NSR with id: " + nsr_id);
+        this.projectId = projectId;
         this.nsr_id = nsr_id;
         this.cooldown = cooldown;
         this.executionEngine = executionEngine;

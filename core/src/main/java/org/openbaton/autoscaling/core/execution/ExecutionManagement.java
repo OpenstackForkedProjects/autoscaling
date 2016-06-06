@@ -58,8 +58,6 @@ public class ExecutionManagement {
     @Autowired
     private ExecutionEngine executionEngine;
 
-    private NFVORequestor nfvoRequestor;
-
     private ActionMonitor actionMonitor;
 
     @Autowired
@@ -69,7 +67,6 @@ public class ExecutionManagement {
     public void init() {
         this.actionMonitor = new ActionMonitor();
         this.executionEngine.setActionMonitor(actionMonitor);
-        this.nfvoRequestor = new NFVORequestor(nfvoProperties.getUsername(), nfvoProperties.getPassword(), nfvoProperties.getIp(), nfvoProperties.getPort(), "1");
         this.taskScheduler = new ThreadPoolTaskScheduler();
         this.taskScheduler.setPoolSize(10);
         this.taskScheduler.setWaitForTasksToCompleteOnShutdown(true);
@@ -85,12 +82,12 @@ public class ExecutionManagement {
         this.taskScheduler.initialize();
     }
 
-    public void executeActions(String nsr_id, Map actionVnfrMap, Set<ScalingAction> actions, long cooldown) {
+    public void executeActions(String projectId, String nsr_id, Map actionVnfrMap, Set<ScalingAction> actions, long cooldown) {
         //log.info("[EXECUTOR] RECEIVED_ACTION " + new Date().getTime());
         if (actionMonitor.requestAction(nsr_id, Action.SCALE)) {
             log.info("Executing scaling actions for NSR " + nsr_id + " -> " + actions);
             log.debug("Creating new ExecutionTask of ScalingActions: " + actions + " for NSR with id: " + nsr_id);
-            ExecutionTask executionTask = new ExecutionTask(nsr_id, actionVnfrMap, actions, cooldown, executionEngine, actionMonitor);
+            ExecutionTask executionTask = new ExecutionTask(projectId, nsr_id, actionVnfrMap, actions, cooldown, executionEngine, actionMonitor);
             taskScheduler.execute(executionTask);
         } else {
             if (actionMonitor.getAction(nsr_id) == Action.SCALE) {
@@ -103,7 +100,7 @@ public class ExecutionManagement {
         }
     }
 
-    public void executeCooldown(String nsr_id, long cooldown) {
+    public void executeCooldown(String projectId, String nsr_id, long cooldown) {
         if (actionMonitor.isTerminating(nsr_id)) {
             actionMonitor.finishedAction(nsr_id, Action.TERMINATED);
             return;
@@ -111,7 +108,7 @@ public class ExecutionManagement {
         log.info("Starting COOLDOWN (" + cooldown + "s) for NSR with id: " + nsr_id);
         if (actionMonitor.requestAction(nsr_id, Action.COOLDOWN)) {
             log.debug("Creating new CooldownTask for NSR with id: " + nsr_id);
-            CooldownTask cooldownTask = new CooldownTask(nsr_id, cooldown, executionEngine, actionMonitor);
+            CooldownTask cooldownTask = new CooldownTask(projectId, nsr_id, cooldown, executionEngine, actionMonitor);
             taskScheduler.execute(cooldownTask);
         } else {
             if (actionMonitor.getAction(nsr_id) == Action.COOLDOWN) {

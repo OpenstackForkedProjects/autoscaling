@@ -63,19 +63,20 @@ public class DecisionEngine {
     @PostConstruct
     public void init() {
         this.executionManagement = context.getBean(ExecutionManagement.class);
-        this.nfvoRequestor = new NFVORequestor(nfvoProperties.getUsername(), nfvoProperties.getPassword(), nfvoProperties.getIp(), nfvoProperties.getPort(), "1");
+        this.nfvoRequestor = new NFVORequestor(nfvoProperties.getUsername(), nfvoProperties.getPassword(), null, nfvoProperties.getIp(), nfvoProperties.getPort(), "1");
     }
 
-    public void sendDecision(String nsr_id, Map actionVnfrMap, Set<ScalingAction> actions, long cooldown) {
+    public void sendDecision(String projectId, String nsr_id, Map actionVnfrMap, Set<ScalingAction> actions, long cooldown) {
         //log.info("[DECISION_MAKER] DECIDED_ABOUT_ACTIONS " + new Date().getTime());
         log.debug("Send actions to Executor: " + actions.toString());
-        executionManagement.executeActions(nsr_id, actionVnfrMap, actions, cooldown);
+        executionManagement.executeActions(projectId, nsr_id, actionVnfrMap, actions, cooldown);
     }
 
-    public Status getStatus(String nsr_id) {
+    public Status getStatus(String projectId, String nsr_id) {
         log.debug("Check Status of NSR with id: " + nsr_id);
         NetworkServiceRecord networkServiceRecord = null;
         try {
+            nfvoRequestor.setProjectId(projectId);
             networkServiceRecord = nfvoRequestor.getNetworkServiceRecordAgent().findById(nsr_id);
         } catch (SDKException e) {
             log.warn(e.getMessage(), e);
@@ -90,8 +91,9 @@ public class DecisionEngine {
         return networkServiceRecord.getStatus();
     }
 
-    public VirtualNetworkFunctionRecord getVNFR(String nsr_id, String vnfr_id) throws SDKException {
+    public VirtualNetworkFunctionRecord getVNFR(String projectId, String nsr_id, String vnfr_id) throws SDKException {
         try {
+            nfvoRequestor.setProjectId(projectId);
             VirtualNetworkFunctionRecord vnfr = nfvoRequestor.getNetworkServiceRecordAgent().getVirtualNetworkFunctionRecord(nsr_id, vnfr_id);
             return vnfr;
         } catch (SDKException e) {
@@ -100,11 +102,12 @@ public class DecisionEngine {
         }
     }
 
-    public List<VirtualNetworkFunctionRecord> getVNFRsOfTypeX(String nsr_id, String type) throws SDKException {
+    public List<VirtualNetworkFunctionRecord> getVNFRsOfTypeX(String projectId, String nsr_id, String type) throws SDKException {
         List<VirtualNetworkFunctionRecord> vnfrsOfTypeX = new ArrayList<>();
         List<VirtualNetworkFunctionRecord> vnfrsAll = new ArrayList<>();
         try {
-             vnfrsAll.addAll(nfvoRequestor.getNetworkServiceRecordAgent().getVirtualNetworkFunctionRecords(nsr_id));
+            nfvoRequestor.setProjectId(projectId);
+            vnfrsAll.addAll(nfvoRequestor.getNetworkServiceRecordAgent().getVirtualNetworkFunctionRecords(nsr_id));
         } catch (SDKException e) {
             log.error(e.getMessage(), e);
             throw e;

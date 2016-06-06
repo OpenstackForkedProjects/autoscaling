@@ -81,7 +81,7 @@ public class ExecutionEngine {
     public void init() {
         //this.resourceManagement = context.getBean(ResourceManagement.class);
         this.executionManagement = context.getBean(ExecutionManagement.class);
-        this.nfvoRequestor = new NFVORequestor(nfvoProperties.getUsername(), nfvoProperties.getPassword(), nfvoProperties.getIp(), nfvoProperties.getPort(), "1");
+        this.nfvoRequestor = new NFVORequestor(nfvoProperties.getUsername(), nfvoProperties.getPassword(), null, nfvoProperties.getIp(), nfvoProperties.getPort(), "1");
     }
 
     private MonitoringPluginCaller getClient() {
@@ -93,6 +93,7 @@ public class ExecutionEngine {
     }
 
     public VirtualNetworkFunctionRecord scaleOut(VirtualNetworkFunctionRecord vnfr, int numberOfInstances) throws NotFoundException {
+        nfvoRequestor.setProjectId(vnfr.getProjectId());
         log.debug("Executing scale-out for VNFR with id: " + vnfr.getId());
         for (int i = 1; i <= numberOfInstances; i++) {
             if (actionMonitor.isTerminating(vnfr.getParent_ns_id())) {
@@ -162,6 +163,7 @@ public class ExecutionEngine {
     }
 
     public VirtualNetworkFunctionRecord scaleIn(VirtualNetworkFunctionRecord vnfr, int numberOfInstances) throws NotFoundException {
+        nfvoRequestor.setProjectId(vnfr.getProjectId());
         log.debug("Executing scale-in for VNFR with id: " + vnfr.getId());
         for (int i = 1; i <= numberOfInstances; i++) {
             VNFCInstance vnfcInstance_remove = null;
@@ -242,11 +244,12 @@ public class ExecutionEngine {
         throw new NotImplementedException();
     }
 
-    public void startCooldown(String nsr_id, long cooldown) {
-        executionManagement.executeCooldown(nsr_id, cooldown);
+    public void startCooldown(String projectId, String nsr_id, long cooldown) {
+        executionManagement.executeCooldown(projectId, nsr_id, cooldown);
     }
 
-    public NFVORequestor getNfvoRequestor() {
+    public NFVORequestor getNfvoRequestor(String projectId) {
+        this.nfvoRequestor.setProjectId(projectId);
         return nfvoRequestor;
     }
 

@@ -26,10 +26,11 @@ repositories {
 
 dependencies {
     compile 'org.openbaton:exception:' + openbatonVersion
+    compile 'org.openbaton:catalogue:' + openbatonVersion
 
-    compile('org.openbaton:sdk:' + openbatonVersion) /*{
+    compile('org.openbaton:sdk:2.0.2-security') {
         exclude module: 'catalogue'
-    }*/
+    }
     compile 'org.slf4j:slf4j-api:1.6.1'
 
     compile 'org.springframework:spring-core:4.0.0.RELEASE'

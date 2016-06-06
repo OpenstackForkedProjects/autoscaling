@@ -74,9 +74,9 @@ public class ElasticityManagement {
     private void exit() throws SDKException {
     }
 
-    public void activate(String nsr_id) throws NotFoundException, VimException {
+    public void activate(String projectId, String nsr_id) throws NotFoundException, VimException {
         log.debug("Activating Elasticity for NSR with id: " + nsr_id);
-        detectionManagment.start(nsr_id);
+        detectionManagment.start(projectId, nsr_id);
         log.info("Activated Elasticity for NSR with id: " + nsr_id);
     }
 
@@ -84,16 +84,16 @@ public class ElasticityManagement {
         log.debug("Activating Elasticity for NSR with id: " + nsr.getId());
         for (VirtualNetworkFunctionRecord vnfr : nsr.getVnfr()) {
             for (AutoScalePolicy autoScalePolicy : vnfr.getAuto_scale_policy())
-                detectionManagment.start(nsr.getId(), vnfr.getId(), autoScalePolicy);
+                detectionManagment.start(nsr.getProjectId(), nsr.getId(), vnfr.getId(), autoScalePolicy);
         }
         log.info("Activated Elasticity for NSR with id: " + nsr.getId());
     }
 
     @Async
-    public void activate(String nsr_id, String vnfr_id) throws NotFoundException, VimException {
+    public void activate(String projectId, String nsr_id, String vnfr_id) throws NotFoundException, VimException {
         log.debug("Activating Elasticity for NSR with id: " + nsr_id);
         //log.info("[AUTOSCALING] Activating Elasticity " + System.currentTimeMillis());
-        detectionManagment.start(nsr_id, vnfr_id);
+        detectionManagment.start(projectId, nsr_id, vnfr_id);
         //log.info("[AUTOSCALING] Activated Elasticity " + System.currentTimeMillis());
         log.info("Activated Elasticity for NSR with id: " + nsr_id);
     }
